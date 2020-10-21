@@ -277,7 +277,7 @@ class Backend extends Controller
         $bind = [];
         $name = '';
         $aliasName = '';
-        if (!empty($this->model)) {
+        if (!empty($this->model) && $this->relationSearch) {
             $name = $this->model->getTable();
             $alias[$name] = Loader::parseName(basename(str_replace('\\', '/', get_class($this->model))));
             $aliasName = $alias[$name] . '.';
@@ -533,11 +533,23 @@ class Backend extends Controller
             if (is_array($adminIds)) {
                 $this->model->where($this->dataLimitField, 'in', $adminIds);
             }
+
             $fields = is_array($this->selectpageFields) ? $this->selectpageFields : ($this->selectpageFields && $this->selectpageFields != '*' ? explode(',', $this->selectpageFields) : []);
+
+            //如果有primaryvalue,说明当前是初始化传值,按照选择顺序排序
+            if ($primaryvalue !== null && preg_match("/^[a-z0-9_\-]+$/i", $primarykey)) {
+                $primaryvalue = array_unique(is_array($primaryvalue) ? $primaryvalue : explode(',', $primaryvalue));
+                $primaryvalue = implode(',', $primaryvalue);
+
+                $this->model->orderRaw("FIELD(`{$primarykey}`, {$primaryvalue})");
+            } else {
+                $this->model->order($order);
+            }
+
             $datalist = $this->model->where($where)
-                ->order($order)
                 ->page($page, $pagesize)
                 ->select();
+
             foreach ($datalist as $index => $item) {
                 unset($item['password'], $item['salt']);
                 if ($this->selectpageFields == '*') {

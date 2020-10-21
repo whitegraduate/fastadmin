@@ -90,7 +90,10 @@ class Install extends Command
         $this->request = Request::instance();
 
         define('INSTALL_PATH', APP_PATH . 'admin' . DS . 'command' . DS . 'Install' . DS);
-        Lang::load(INSTALL_PATH . $this->request->langset() . '.php');
+        $langSet = strtolower($this->request->langset());
+        if (!$langSet || in_array($langSet, ['zh-cn', 'zh-hans-cn'])) {
+            Lang::load(INSTALL_PATH . 'zh-cn.php');
+        }
 
         $installLockFile = INSTALL_PATH . "install.lock";
 
@@ -222,6 +225,12 @@ class Install extends Command
         $newPassword = md5(md5($adminPassword) . $newSalt);
         $data = ['username' => $adminUsername, 'email' => $adminEmail, 'password' => $newPassword, 'salt' => $newSalt];
         $instance->name('admin')->where('username', 'admin')->update($data);
+
+        // 变更前台默认用户的密码,随机生成
+        $newSalt = substr(md5(uniqid(true)), 0, 6);
+        $newPassword = md5(md5(Random::alnum(8)) . $newSalt);
+        $instance->name('user')->where('username', 'admin')->update(['password' => $newPassword, 'salt' => $newSalt]);
+
         // 修改后台入口
         $adminName = '';
         if (is_file($adminFile)) {
@@ -230,9 +239,9 @@ class Install extends Command
         }
 
         //修改站点名称
-        if ($siteName != __('My Website')) {
+        if ($siteName != config('site.name')) {
             $instance->name('config')->where('name', 'name')->update(['value' => $siteName]);
-            $configFile = APP_PATH . 'extra' . DS . 'site.php';
+            $configFile = CONF_PATH . 'extra' . DS . 'site.php';
             $config = include $configFile;
             $configList = $instance->name("config")->select();
             foreach ($configList as $k => $value) {
@@ -245,7 +254,7 @@ class Install extends Command
                 $config[$value['name']] = $value['value'];
             }
             $config['name'] = $siteName;
-            file_put_contents($configFile, '<?php' . "\n\nreturn " . var_export($config, true) . ";");
+            file_put_contents($configFile, '<?php' . "\n\nreturn " . var_export_short($config) . ";\n");
         }
 
         $installLockFile = INSTALL_PATH . "install.lock";
@@ -273,8 +282,8 @@ class Install extends Command
         //数据库配置文件
         $dbConfigFile = APP_PATH . 'database.php';
 
-        if (version_compare(PHP_VERSION, '5.5.0', '<')) {
-            throw new Exception(__("The current version %s is too low, please use PHP 5.5 or higher", PHP_VERSION));
+        if (version_compare(PHP_VERSION, '7.0.0', '<')) {
+            throw new Exception(__("The current version %s is too low, please use PHP 7.0 or higher", PHP_VERSION));
         }
         if (!extension_loaded("PDO")) {
             throw new Exception(__("PDO is not currently installed and cannot be installed"));

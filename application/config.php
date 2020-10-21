@@ -279,10 +279,18 @@ return [
         'adminskin'             => '',
         //后台是否启用面包屑
         'breadcrumb'            => false,
+        //是否允许未知来源的插件压缩包
+        'unknownsources'        => false,
+        //插件启用禁用时是否备份对应的全局文件
+        'backup_global_files'   => true,
+        //是否开启后台自动日志记录
+        'auto_record_log'       => true,
+        //插件纯净模式，插件启用后是否删除插件目录的application、public和assets文件夹
+        'addon_pure_mode'       => true,
         //允许跨域的域名,多个以,分隔
         'cors_request_domain'   => 'localhost,127.0.0.1',
         //版本号
-        'version'               => '1.2.0',
+        'version'               => '1.2.0.20201008_beta',
         //API接口地址
         'api_url'               => 'https://api.fastadmin.net',
     ],
