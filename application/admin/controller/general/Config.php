@@ -28,7 +28,8 @@ class Config extends Backend
     public function _initialize()
     {
         parent::_initialize();
-        $this->model = model('Config');
+        // $this->model = model('Config');
+        $this->model = new ConfigModel;
         ConfigModel::event('before_write', function ($row) {
             if (isset($row['name']) && $row['name'] == 'name' && preg_match("/fast" . "admin/i", $row['value'])) {
                 throw new Exception(__("Site name incorrect"));
@@ -255,8 +256,8 @@ class Config extends Backend
             $email = new Email;
             $result = $email
                 ->to($receiver)
-                ->subject(__("This is a test mail"))
-                ->message('<div style="min-height:550px; padding: 100px 55px 200px;">' . __('This is a test mail content') . '</div>')
+                ->subject(__("This is a test mail", config('site.name')))
+                ->message('<div style="min-height:550px; padding: 100px 55px 200px;">' . __('This is a test mail content', config('site.name')) . '</div>')
                 ->send();
             if ($result) {
                 $this->success();
